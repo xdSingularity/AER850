@@ -52,6 +52,13 @@ for train_index, test_index in split.split(df, df['Step']):
 train_X = strat_train_set[['X', 'Y', 'Z']]
 train_Y = strat_train_set['Step']
 
+from sklearn.metrics import mean_absolute_error
+from sklearn.ensemble import RandomForestRegressor
+RFR = RandomForestRegressor(n_estimators=30, random_state=42)
+RFR.fit(train_X, train_Y)
+RFR_predictions = RFR.predict(train_X)
+RFR_train_mae = mean_absolute_error(RFR_predictions, train_Y)
+print("Random Forest Regressor training MAE is: ", round(RFR_train_mae,2))
 
 ## part 5 ###################################################################################################################
 
