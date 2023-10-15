@@ -93,7 +93,7 @@ models = [
     },
     {
         'name': 'LogisticRegression',
-        'model': LogisticRegression(random_state=42, max_iter=100000),
+        'model': LogisticRegression(random_state=42, max_iter=10000),
         'param_grid': [{'penalty': ['l1'],'C': [0.001, 0.01, 0.1, 1, 10, 100],'solver': ['liblinear', 'saga']},
             {'penalty': ['l2'],'C': [0.001, 0.01, 0.1, 1, 10, 100],'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']},
             {'penalty': [None],'solver': ['newton-cg', 'lbfgs', 'sag', 'saga']}
@@ -131,7 +131,7 @@ RFC_best.fit(train_X, train_Y)
 RFC_best_predictions = RFC_best.predict(test_X)
 
 # Training LR with best hyperparameters
-LR_best = LogisticRegression(**LR_params)
+LR_best = LogisticRegression(max_iter=10000, **LR_params)
 LR_best.fit(train_X, train_Y)
 LR_best_predictions = LR_best.predict(test_X)
 
@@ -161,6 +161,15 @@ print(f"\nLogistic Regression - Accuracy: {round(LR_accuracy, 5)}, Precision: {r
 SVM_accuracy, SVM_precision, SVM_f1 = compute_metrics(SVM_best_predictions, test_Y)
 print(f"\nSupport Vector Machine Classifier - Accuracy: {round(SVM_accuracy, 5)}, Precision: {round(SVM_precision, 5)}, F1 Score: {round(SVM_f1, 5)}")
 
+# Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(test_Y, LR_best_predictions)  # Replace with your best model's predictions
+plt.figure(figsize=(10, 8))
+sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', xticklabels=LR.classes_, yticklabels=LR.classes_)  # Replace RFC with your best model
+plt.ylabel('Actual')
+plt.xlabel('Predicted')
+plt.title('Confusion Matrix')
+plt.show()
 
 
 
