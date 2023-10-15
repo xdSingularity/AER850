@@ -42,23 +42,86 @@ plt.title('Correlation Heatmap')
 plt.show()
 
 ## part 4 ###################################################################################################################
+X = df['X','Y','Z']
+Y = df['Step']
+
 from sklearn.model_selection import StratifiedShuffleSplit
 # Assuming you're stratifying based on the 'Z' column
 split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-for train_index, test_index in split.split(df, df['Step']):
-    strat_train_set = df.loc[train_index].reset_index(drop=True)
-    strat_test_set = df.loc[test_index].reset_index(drop=True)
+for train_index, test_index in split.split(X, Y):
+    train_X, test_X = X.iloc[train_index], X.iloc[test_index]
+    train_Y, test_Y = Y.iloc[train_index], Y.iloc[test_index]
 
-train_X = strat_train_set[['X', 'Y', 'Z']]
-train_Y = strat_train_set['Step']
+#model 1 RANDOM FOREST CLASSIFIER
+from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+RFC = RandomForestClassifier(n_estimators=100, random_state=42)
+RFC.fit(train_X, train_Y)
+RFC_predictions = RFC.predict(train_X)
+RFC_train_accuracy = accuracy_score(RFC_predictions, train_Y)
+print("Random Forest Classifier training accuracy is: ", round(RFC_train_accuracy, 5))
 
-from sklearn.metrics import mean_absolute_error
-from sklearn.ensemble import RandomForestRegressor
-RFR = RandomForestRegressor(n_estimators=30, random_state=42)
-RFR.fit(train_X, train_Y)
-RFR_predictions = RFR.predict(train_X)
-RFR_train_mae = mean_absolute_error(RFR_predictions, train_Y)
-print("Random Forest Regressor training MAE is: ", round(RFR_train_mae,2))
+#model 2 LOGISTIC REGRESSION
+from sklearn.linear_model import LogisticRegression
+LR = LogisticRegression(max_iter=1000) # Increasing max_iter for convergence
+LR.fit(train_X, train_Y)
+LR_predictions = LR.predict(train_X)
+LR_train_accuracy = accuracy_score(LR_predictions, train_Y)
+print("Logistic Regression training accuracy is: ", round(LR_train_accuracy, 5))
+
+#model 3 SVM (SVC)
+from sklearn.svm import SVC
+SVM_clf = SVC(kernel="linear")  # Using a linear kernel for simplicity. You can try other kernels like 'rbf'.
+SVM_clf.fit(train_X, train_Y)
+SVM_predictions = SVM_clf.predict(train_X)
+SVM_train_accuracy = accuracy_score(SVM_predictions, train_Y)
+print("Support Vector Machine Classifier training accuracy is: ", round(SVM_train_accuracy, 5))
+
+# GRIDSEARCH CV
+from sklearn.model_selection import GridSearchCV
+models = [
+    {
+        'name': 'RandomForestClassifier',
+        'model': RandomForestClassifier(random_state=42),
+        'param_grid': {
+            'n_estimators': [10, 30, 50, 100, 200],
+            'max_depth': [None, 10, 20, 30, 40],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4],
+            'max_features': ['sqrt', 'log2']
+        }
+    },
+    {
+        'name': 'LogisticRegression',
+        'model': LogisticRegression(random_state=42, max_iter=10000),
+        'param_grid': [{'penalty': ['l1'],'C': [0.001, 0.01, 0.1, 1, 10, 100],'solver': ['liblinear', 'saga']},
+            {'penalty': ['l2'],'C': [0.001, 0.01, 0.1, 1, 10, 100],'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']},
+            {'penalty': [None],'solver': ['newton-cg', 'lbfgs', 'sag', 'saga']}
+        ]
+    },
+    {
+        'name': 'SVC',
+        'model': SVC(random_state=42),
+        'param_grid': {
+            'C': [0.1, 1, 10, 100],
+            'kernel': ['linear', 'rbf', 'poly', 'sigmoid'],
+            'gamma': ['scale', 'auto']
+        }
+    }
+]
+
+best_params_dict = {}
+for model_info in models:
+    print(f"\nOptimizing {model_info['name']}...")
+    grid_search = GridSearchCV(model_info['model'], model_info['param_grid'], cv=5, scoring='accuracy', n_jobs=-1, error_score='raise')
+    grid_search.fit(train_X, train_Y)
+    best_params = grid_search.best_params_
+    best_params_dict[model_info['name']] = best_params
+    print(f"Best Hyperparameters for {model_info['name']}:", best_params)
+
+RFC_params = best_params_dict['RandomForestClassifier']
+LR_params = best_params_dict['LogisticRegression']
+SVM_params = best_params_dict['SVC']
 
 ## part 5 ###################################################################################################################
 
